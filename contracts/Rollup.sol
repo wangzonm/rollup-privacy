@@ -111,7 +111,8 @@ contract Rollup is Ownable, RollupHelpers, RollupInterface {
      * contains all data required for the operator to update balance tree
      */
     event OnChainTx(uint batchNumber, bytes32 txData, uint128 loadAmount,
-        address fromEthAddress, uint256 fromAx, uint256 fromAy,  address toEthAddress, uint256 toAx, uint256 toAy);
+        address fromEthAddress, uint256 fromAx, uint256 fromAy,  address toEthAddress, uint256 toAx, uint256 toAy, 
+        bytes32 encPubKeya, bytes32 encPubKeyb, bytes32 encPubKeyc, bytes32 encPubKeyd, bytes32 encPubKeye);
 
     /**
      * @dev Event called when a batch is forged
@@ -196,7 +197,8 @@ contract Rollup is Ownable, RollupHelpers, RollupInterface {
         address fromEthAddress,
         uint256[2] memory fromBabyPubKey,
         address toEthAddress,
-        uint256[2] memory toBabyPubKey
+        uint256[2] memory toBabyPubKey,
+        bytes32[5] memory encPubKey
     ) private {
 
         // Retrieve current fillingOnchainHash
@@ -222,7 +224,7 @@ contract Rollup is Ownable, RollupHelpers, RollupInterface {
         
         // trigger on chain tx event event
         emit OnChainTx(currentFillingBatch, bytes32(txData), loadAmount, fromEthAddress, fromBabyPubKey[0], fromBabyPubKey[1],
-        toEthAddress, toBabyPubKey[0], toBabyPubKey[1]);
+        toEthAddress, toBabyPubKey[0], toBabyPubKey[1], encPubKey[0], encPubKey[1], encPubKey[2], encPubKey[3], encPubKey[4]);
 
          // if the currentFilling slot have all the OnChainTx possible, add a new element to the array
         if (currentFilling.currentOnChainTx >= MAX_ONCHAIN_TX) {
@@ -243,7 +245,8 @@ contract Rollup is Ownable, RollupHelpers, RollupInterface {
         uint128 loadAmount,
         uint32 tokenId,
         address ethAddress,
-        uint256[2] memory babyPubKey
+        uint256[2] memory babyPubKey,
+        bytes32[5] memory encPubKey
     ) public payable {
         // Onchain fee + deposit fee
         uint256 totalFee = feeOnchainTx + depositFee;
@@ -273,7 +276,7 @@ contract Rollup is Ownable, RollupHelpers, RollupInterface {
         // Burn deposit fee
         address(0).transfer(depositFee);
         
-        _updateOnChainHash(uint256(txDataDeposit), loadAmount, ethAddress, babyPubKey, address(0), [uint256(0),uint256(0)]);
+        _updateOnChainHash(uint256(txDataDeposit), loadAmount, ethAddress, babyPubKey, address(0), [uint256(0),uint256(0)], encPubKey);
 
         // Return remaining ether to the msg.sender    
         msg.sender.transfer(msg.value - totalFee);
@@ -340,7 +343,8 @@ contract Rollup is Ownable, RollupHelpers, RollupInterface {
 
         // Build txData for deposit on top
         bytes32 txDataDepositOnTop = buildTxData(0, tokenId, 0, 0, 0, true, false);
-        _updateOnChainHash(uint256(txDataDepositOnTop), loadAmount, leaf.ethAddress, babyPubKey, address(0), [uint256(0),uint256(0)]);
+        _updateOnChainHash(uint256(txDataDepositOnTop), loadAmount, leaf.ethAddress, babyPubKey, address(0), [uint256(0),uint256(0)],
+        [bytes32(0),bytes32(0),bytes32(0),bytes32(0),bytes32(0)]);
 
         // Return remaining ether to the msg.sender    
         msg.sender.transfer(msg.value - totalFee);
@@ -371,7 +375,7 @@ contract Rollup is Ownable, RollupHelpers, RollupInterface {
         // Build txData for transfer
         bytes32 txDataTransfer = buildTxData(amountF, tokenId, 0, 0, 0, true, false);
         _updateOnChainHash(uint256(txDataTransfer), 0, fromLeaf.ethAddress, fromBabyPubKey,
-         toLeaf.ethAddress, toBabyPubKey);
+         toLeaf.ethAddress, toBabyPubKey, [bytes32(0),bytes32(0),bytes32(0),bytes32(0),bytes32(0)]);
 
         // Return remaining ether to the msg.sender    
         msg.sender.transfer(msg.value - totalFee);
@@ -394,7 +398,8 @@ contract Rollup is Ownable, RollupHelpers, RollupInterface {
         address fromEthAddress,
         uint256[2] memory fromBabyPubKey,
         uint256[2] memory toBabyPubKey,
-        uint16 amountF
+        uint16 amountF,
+        bytes32[5] encPubKey
     ) public payable{
         // Onchain fe + deposit Fee
         uint256 totalFee = feeOnchainTx + depositFee;        
@@ -431,7 +436,7 @@ contract Rollup is Ownable, RollupHelpers, RollupInterface {
         address(0).transfer(depositFee);
 
         _updateOnChainHash(uint256(txDataDepositAndTransfer), loadAmount, fromEthAddress, fromBabyPubKey,
-        toLeaf.ethAddress, toBabyPubKey);
+        toLeaf.ethAddress, toBabyPubKey, encPubKey);
 
         // Return remaining ether to the msg.sender    
         msg.sender.transfer(msg.value - totalFee);
@@ -458,7 +463,8 @@ contract Rollup is Ownable, RollupHelpers, RollupInterface {
 
         // Build txData for withdraw
         bytes32 txDataWithdraw = buildTxData(amountF, tokenId, 0, 0, 0, true, false);
-        _updateOnChainHash(uint256(txDataWithdraw), 0, msg.sender, fromBabyPubKey, address(0), [uint256(0),uint256(0)]);
+        _updateOnChainHash(uint256(txDataWithdraw), 0, msg.sender, fromBabyPubKey, address(0), [uint256(0),uint256(0)],
+        [bytes32(0),bytes32(0),bytes32(0),bytes32(0),bytes32(0)]);
 
         // Return remaining ether to the msg.sender    
         msg.sender.transfer(msg.value - totalFee);
