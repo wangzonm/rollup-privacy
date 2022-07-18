@@ -1,0 +1,8 @@
+{
+  "maxSlots": 10,
+  "maxDeposits":18,               
+  "executableSlots": 1,      
+  "nonExecutableSlots": 1,      
+  "timeout": 1000,
+  "pathConversionTable": "/home/data/conversion-table.json"            
+}

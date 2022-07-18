@@ -1,0 +1,6 @@
+getIden3.sh
+node_modules
+/test/resources/
+/wallet.json
+/config.json
+/*.test.json

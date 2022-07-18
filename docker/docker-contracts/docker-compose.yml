@@ -1,0 +1,13 @@
+version: '3'
+services:
+  contracts:
+    container_name: contracts
+    build:
+      context: .
+      args:
+        - access_token=${ACCESS_TOKEN}
+        - branch=${BRANCH}
+    volumes:
+      - ./config-contracts:/config-contracts
+    env_file: 
+      - ./.env

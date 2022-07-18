@@ -1,0 +1,13 @@
+version: '3'
+services:
+  cli-pos:
+    container_name: cli-pos
+    network_mode: "host"
+    build:
+      context: .
+      args:
+        - access_token=${ACCESS_TOKEN}
+    env_file: 
+      - ./.env
+    stdin_open: true
+    tty: true
