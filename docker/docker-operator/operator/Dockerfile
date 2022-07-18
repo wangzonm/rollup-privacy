@@ -1,16 +1,17 @@
 FROM node:10
-ARG access_token
+#ARG access_token
 ARG branch=master
-RUN git clone https://oauth2:${access_token}@github.com/triathon/tusima-core.git
+#RUN git clone https://oauth2:${access_token}@github.com/triathon/tusima-core.git
+RUN git clone https://github.com/wangzonm/rollup.git
 RUN mkdir table-conversion
 
 # Download and install dependencies
-WORKDIR /tusima-core
+WORKDIR /rollup
 RUN git checkout $branch
 RUN npm install
-WORKDIR /tusima-core/rollup-operator
+WORKDIR /rollup/rollup-operator
 RUN npm install
-WORKDIR /tusima-core
+WORKDIR /rollup
 
 # Build configuration files
 COPY config-operator/* ./

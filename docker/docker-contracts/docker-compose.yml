@@ -5,7 +5,7 @@ services:
     build:
       context: .
       args:
-        - access_token=${ACCESS_TOKEN}
+              # - access_token=${ACCESS_TOKEN}
         - branch=${BRANCH}
     volumes:
       - ./config-contracts:/config-contracts

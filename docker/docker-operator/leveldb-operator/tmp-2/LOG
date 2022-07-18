@@ -1,0 +1,5 @@
+2022/07/15-08:10:55.262610 7f74ebfff700 Recovering log #11
+2022/07/15-08:10:55.262655 7f74ebfff700 Level-0 table #13: started
+2022/07/15-08:10:55.266237 7f74ebfff700 Level-0 table #13: 203 bytes OK
+2022/07/15-08:10:55.272607 7f74ebfff700 Delete type=0 #11
+2022/07/15-08:10:55.272671 7f74ebfff700 Delete type=3 #9
