@@ -110,9 +110,13 @@ contract Rollup is Ownable, RollupHelpers, RollupInterface {
      * @dev Event called when any on-chain transaction has benn done
      * contains all data required for the operator to update balance tree
      */
+    // event OnChainTx(uint batchNumber, bytes32 txData, uint128 loadAmount,
+    //     address fromEthAddress, uint256 fromAx, uint256 fromAy,  address toEthAddress, uint256 toAx, uint256 toAy, 
+    //     bytes32 encPubKeya, bytes32 encPubKeyb, bytes32 encPubKeyc, bytes32 encPubKeyd, bytes32 encPubKeye);
+
     event OnChainTx(uint batchNumber, bytes32 txData, uint128 loadAmount,
         address fromEthAddress, uint256 fromAx, uint256 fromAy,  address toEthAddress, uint256 toAx, uint256 toAy, 
-        bytes32 encPubKeya, bytes32 encPubKeyb, bytes32 encPubKeyc, bytes32 encPubKeyd, bytes32 encPubKeye);
+        bytes32[5] encPubKey);
 
     /**
      * @dev Event called when a batch is forged
@@ -223,8 +227,11 @@ contract Rollup is Ownable, RollupHelpers, RollupInterface {
         currentFilling.totalFillingOnChainFee += feeOnchainTx - burnedFee;
         
         // trigger on chain tx event event
+        // emit OnChainTx(currentFillingBatch, bytes32(txData), loadAmount, fromEthAddress, fromBabyPubKey[0], fromBabyPubKey[1],
+        // toEthAddress, toBabyPubKey[0], toBabyPubKey[1], encPubKey[0], encPubKey[1], encPubKey[2], encPubKey[3], encPubKey[4]);
+
         emit OnChainTx(currentFillingBatch, bytes32(txData), loadAmount, fromEthAddress, fromBabyPubKey[0], fromBabyPubKey[1],
-        toEthAddress, toBabyPubKey[0], toBabyPubKey[1], encPubKey[0], encPubKey[1], encPubKey[2], encPubKey[3], encPubKey[4]);
+        toEthAddress, toBabyPubKey[0], toBabyPubKey[1], encPubKey);
 
          // if the currentFilling slot have all the OnChainTx possible, add a new element to the array
         if (currentFilling.currentOnChainTx >= MAX_ONCHAIN_TX) {
@@ -399,7 +406,7 @@ contract Rollup is Ownable, RollupHelpers, RollupInterface {
         uint256[2] memory fromBabyPubKey,
         uint256[2] memory toBabyPubKey,
         uint16 amountF,
-        bytes32[5] encPubKey
+        bytes32[5] memory encPubKey
     ) public payable{
         // Onchain fe + deposit Fee
         uint256 totalFee = feeOnchainTx + depositFee;        
