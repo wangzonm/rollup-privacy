@@ -429,6 +429,42 @@ class HttpMethods {
             }
         });
 
+        this.app.get("/accountencPubKey/:address", async (req, res) => {
+            const rollupAddress = req.params.address;
+            
+            let compressHex;
+            if (rollupAddress.startsWith("0x")) compressHex = rollupAddress.slice(2);
+            else compressHex = rollupAddress;
+
+            const buf = Buffer.from(compressHex, "hex"); 
+            const point = babyJub.unpackPoint(buf);
+            
+            // check point is decompressed correctly
+            if (!point){
+                res.status(404).send("Account not found");
+                return;
+            }
+
+            const ax = point[0].toString(16);
+            const ay = point[1].toString(16);
+            console.log('------Ax-----------');
+            console.log(ax);
+            console.log('--------Ay----------');
+            console.log(ay);
+            
+            try {
+                const info = await this.rollupSynch.getPubKeyByAxAy(ax, ay);
+                if (info === null || info.length === 0)
+                    res.status(404).send("Account not found");
+                else   
+                    res.status(200).json(stringifyBigInts(info));
+            } catch (error){
+                this.logger.error(`Message error: ${error.message}`);
+                this.logger.debug(`Message error: ${error.stack}`);
+                res.status(400).send("Error getting accounts encPubKey information");
+            }
+        });
+
         this.app.get("/accounts/:address/:coin", async (req, res) => {
             const rollupAddress = req.params.address;
             const coin = req.params.coin;

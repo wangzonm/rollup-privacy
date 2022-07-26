@@ -13,6 +13,7 @@ module.exports.DB_Master = hash([string2Int("Rollup_DB_Master")]);
 module.exports.DB_Batch = hash([string2Int("Rollup_DB_Batch")]);
 module.exports.DB_Idx = hash([string2Int("Rollup_DB_Idx")]);
 module.exports.DB_AxAy = hash([string2Int("Rollup_DB_AxAy")]);
+module.exports.DB_RsaKeyAxAy = hash([string2Int("Rollup_DB_DB_RsaKeyAxAyy")]);
 module.exports.DB_EthAddr = hash([string2Int("Rollup_DB_EthAddr")]);
 module.exports.DB_TxPoolSlotsMap = hash([string2Int("Rollup_DB_TxPoolSlots")]);
 module.exports.DB_TxPollTx = hash([string2Int("Rollup_DB_TxPollTx")]);

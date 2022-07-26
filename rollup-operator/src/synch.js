@@ -719,6 +719,8 @@ class Synchronizer {
      * @returns {Object} - useful on-chain data 
      */
     _getOnChainEventData(onChainData) {
+        console.log('---------------in function _getOnChainEventData----------------');
+        console.log(onChainData);
         return {
             batchNumber: onChainData.batchNumber,
             txData: onChainData.txData,
@@ -729,6 +731,7 @@ class Synchronizer {
             toEthAddr: onChainData.toEthAddress,
             toAx: onChainData.toAx,
             toAy: onChainData.toAy,
+            encPubKey: onChainData.encPubKey
         };
     }
 
@@ -738,6 +741,7 @@ class Synchronizer {
      * @param {Array} onChain - on-chain events 
      */
     async _updateTree(offChain, onChain) {
+        console.log('-----in function _updateTree synch.js--------------------');
         const batch = await this.treeDb.buildBatch(this.maxTx, this.nLevels);
         const tmpNewAccounts = {};
         let tmpInitialIdx = batch.finalIdx;
@@ -745,6 +749,8 @@ class Synchronizer {
         // events on-chain tx
         for (const event of onChain) {
             const tx = await this._getTxOnChain(event);
+            console.log('-----tx here we can the tx structure transferrd from event--------');
+            console.log(tx);
             batch.addTx(tx);
             // if (this.mode !== Constants.mode.light)
             if (tx.toAx == GlobalConst.exitAx && tx.toAy == GlobalConst.exitAy && Scalar.neq(tx.amount, 0)) 
@@ -862,7 +868,32 @@ class Synchronizer {
      * @returns {Object} rollup transaction  
      */
     async _getTxOnChain(event) {
+        console.log('-------in function _getTxOnChain here how to transfer event to tx----- ');
+        console.log(event.txData);
         const txData = decodeTxData(event.txData);
+        console.log(event);
+        console.log('event.encPubKey');
+        console.log(event.encPubkey);
+
+        console.log('the content is :');
+        console.log(event.encPubKey[0]);
+        console.log(event.encPubKey[1]);
+        console.log(event.encPubKey[2]);
+        console.log(event.encPubKey[3]);
+        console.log(event.encPubKey[4]);
+
+        let stringBufEncPubKeya = event.encPubKey[0].slice(2);
+        let stringBufEncPubKeyb = event.encPubKey[1].slice(2);
+        let stringBufEncPubKeyc = event.encPubKey[2].slice(2);
+        let stringBufEncPubKeyd = event.encPubKey[3].slice(2);
+        let stringBufEncPubKeye = event.encPubKey[4].slice(2);
+
+        let encPubKeyHex = stringBufEncPubKeya.concat(stringBufEncPubKeyb, stringBufEncPubKeyc, stringBufEncPubKeyd, 
+            stringBufEncPubKeye).slice(0, 280);
+        console.log("encPubKeyHex");
+        console.log(encPubKeyHex);
+
+
         return {
             amount: Scalar.e(txData.amount),
             loadAmount: Scalar.e(event.loadAmount),
@@ -875,6 +906,7 @@ class Synchronizer {
             toEthAddr: event.toEthAddr,
             onChain: true,
             newAccount: txData.newAccount,
+            encPubKeyHex: encPubKeyHex,
         };
     }
 
@@ -1017,6 +1049,16 @@ class Synchronizer {
      */
     async getStateById(id) {
         return await this.treeDb.getStateByIdx(id);
+    }
+
+     /**
+     * Get encPubkey that matches with AxAy
+     * @param {String} ax - x babyjubjub coordinate encoded as hexadecimal string 
+     * @param {String} ay - y babyjubjub coordinate encoded as hexadecimal string 
+     * @returns {String} - encPubKey  
+     */
+    async getPubKeyByAxAy(ax, ay) {
+        return await this.treeDb.getEncPubKey(ax, ay);
     }
 
     /**

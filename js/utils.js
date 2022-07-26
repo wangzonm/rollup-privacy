@@ -202,11 +202,13 @@ function txRoundValues(tx) {
  * @returns {Array} Resulting array
  */
 function state2array(st) {
+    console.log('-----in function state2array-----');
     let data = Scalar.e(0);
     
     data = Scalar.add(data, st.coin);
     data = Scalar.add(data, Scalar.shl(st.nonce, 32));
-
+    console.log('st :')
+    console.log(st);
     return [
         data,
         Scalar.e(st.amount),
@@ -222,6 +224,8 @@ function state2array(st) {
  * @returns {Object} Merkle tree state object
  */
 function array2state(a) {
+    console.log('-----in function array2state-------');
+    console.log(a);
     return {
         coin: Scalar.toNumber(extract(a[0], 0, 32)),
         nonce: Scalar.toNumber(extract(a[0], 32, 80)),

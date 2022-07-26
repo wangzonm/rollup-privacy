@@ -7,6 +7,7 @@ const SMT = require("circomlib").SMT;
 const SMTTmpDb = require("./smttmpdb");
 const utils = require("./utils");
 const Constants = require("./constants");
+const constants = require("../rollup-operator/src/constants");
 
 const poseidonHash = poseidon.createHash(6, 8, 57);
 
@@ -103,6 +104,8 @@ module.exports = class BatchBuilder {
      * @param {Object} tx - Object transaction
      */
     async _addTx(tx) {
+        console.log('------in function _addTx--------');
+        console.log(tx);
         const i = this.input.txData.length;
 
         // Find and set Idx
@@ -133,6 +136,7 @@ module.exports = class BatchBuilder {
         }
 
         let oldState1;
+        let rsaKey;
         let oldState2;
         let op1 = "NOP";
         let op2 = "INSERT";
@@ -157,6 +161,7 @@ module.exports = class BatchBuilder {
                     ay: tx.fromAy,
                     ethAddress: tx.fromEthAddr
                 };
+                rsaKey = tx.encPubKeyHex;
                 op1 = "INSERT";
                 newAccount = 1;
             }
@@ -302,6 +307,10 @@ module.exports = class BatchBuilder {
                 [keyIdx, tx.fromIdx],
             ]);
 
+            console.log('--------insert keyIdx tx.fromIdx-----');
+            console.log(keyIdx);
+            console.log(tx.fromIdx);
+
             // Database AxAy
             const keyAxAy = Scalar.add( Scalar.add(Constants.DB_AxAy, this.input.fromAx[i]), this.input.fromAy[i]);
             const lastAxAyStates = await this.dbState.get(keyAxAy);
@@ -317,6 +326,13 @@ module.exports = class BatchBuilder {
                 valStatesAxAy = [...lastAxAyStates];
                 lastAxAyState = valStatesAxAy.slice(-1)[0];
             }
+
+            console.log('-----lastAxAyState------');
+            console.log(lastAxAyState);
+            console.log('-----valStatesAxAy------');
+            console.log(valStatesAxAy);
+
+            console.log('--------insert keyAxAy valStateAxAy-----');
             if (!valStatesAxAy.includes(this.newBatchNumberDb)){
                 valStatesAxAy.push(this.newBatchNumberDb);
                 await this.dbState.multiIns([
@@ -335,11 +351,37 @@ module.exports = class BatchBuilder {
             if (!valOldAxAy) newValAxAy = [];
             else newValAxAy = [...valOldAxAy];
             newValAxAy.push(Scalar.e(tx.fromIdx));
+
+            console.log('------newValAxAy-----');
+            console.log(newValAxAy);
             // new key newValAxAy
             const newKeyAxAyBatch = poseidonHash([keyAxAy, this.newBatchNumberDb]);
             await this.dbState.multiIns([
                 [newKeyAxAyBatch, newValAxAy],
             ]);
+
+
+            console.log('--------insert newKeyAxAyBatch newValAxAy-----');
+            console.log(newKeyAxAyBatch);
+            console.log(newValAxAy);
+
+            // Database RsaKey
+            const keyRsaAxAy = Scalar.add( Scalar.add(Constants.DB_RsaKeyAxAy, this.input.fromAx[i]), this.input.fromAy[i]);
+            console.log('---------------insert keyRsaAxAy---------------------');
+            console.log('---------this.input.formAx[i]---------');
+            console.log(this.input.fromAx[i])
+            console.log(this.input.fromAy[i]);
+            
+            let valRsaKey = (Scalar.fromString(rsaKey, 16));
+            await this.dbState.multiIns([
+                [keyRsaAxAy, valRsaKey],
+            ]);
+
+            console.log('keyRsaAxAy');
+            console.log(rsaKey);
+            console.log(keyRsaAxAy);
+            console.log(valRsaKey);
+
 
             // Database Ether address
             const keyEth = Scalar.add(Constants.DB_EthAddr, this.input.fromEthAddr[i]);
@@ -714,6 +756,7 @@ module.exports = class BatchBuilder {
      */
     async build() {
 
+        console.log('----in function build  batchbuilder.js--------------');
         this.input = {
             initialIdx: this.finalIdx,
             oldStRoot: this.stateTree.root,
@@ -771,7 +814,13 @@ module.exports = class BatchBuilder {
 
         // Add on-chain Tx
         for (let i=0; i<this.onChainTxs.length; i++) {
+
+            console.log('-------in function build() batchbuild.js-------');
+            console.log('-------add by function------------------');
+
             await this._addTx(this.onChainTxs[i]);
+            console.log('-------here can see tx content-------');
+            console.log(this.onChainTxs[i]);
         }
 
         // Add Nop Tx

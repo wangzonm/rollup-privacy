@@ -39,6 +39,8 @@ class RollupDB {
         if (!bb.builded) {
             await bb.build();
         }
+        console.log('----bb.dbState.inserts---------');
+        console.log(bb.dbState.inserts);
         const insertsState = Object.keys(bb.dbState.inserts).reverse().map(function(key) {
             return [Scalar.e(key), bb.dbState.inserts[key]];
         });
@@ -132,12 +134,35 @@ class RollupDB {
         if (!keyValueState) return null;
         const stateArray = await this.db.get(keyValueState);
         if (!stateArray) return null;
+
+        console.log('----in rollupdb.js---------');
+        console.log('------stateArray---------');
+        console.log(stateArray);
         const st = utils.array2state(stateArray);
         st.idx = Number(idx);
         st.rollupAddress = this.pointToCompress(st.ax, st.ay);
         return st;
     }
 
+    /**
+     * Return the encPubKey matches some babyjub public key
+     * @param {String} ax - Ax coordinate encoded as hexadecimal string
+     * @param {String} ay - Ay coordinate encoded as hexadecimal string
+     * @returns {String} encPubKey string
+     */
+    async getEncPubKey(ax, ay) {
+        let keyEncPubAxAy = Scalar.add( Scalar.add(Constants.DB_RsaKeyAxAy, Scalar.fromString(ax, 16)), Scalar.fromString(ay, 16));
+        const valEncPubKey = await this.db.get(keyEncPubAxAy);
+        const encPubKey = Scalar.e(valEncPubKey).toString(16);
+        console.log('----------------in---getEncPubKey-------------------');
+        console.log('keyEncPubAxAy');
+        console.log(keyEncPubAxAy);
+        console.log('valEncPubKey');
+        console.log(valEncPubKey);
+        console.log('encPubKey');
+        console.log(encPubKey)
+        return encPubKey;
+    }
     /**
      * Return all the states that matches some babyjub public key
      * @param {String} ax - Ax coordinate encoded as hexadecimal string
