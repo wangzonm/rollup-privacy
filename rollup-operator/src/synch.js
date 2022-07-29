@@ -12,6 +12,7 @@ const Constants = require("./constants");
 const GlobalConst = require("../../js/constants");
 
 const MultiChainTxSend = require("./multichainTxSend");
+const NodeRSA = require("node-rsa");
 
 const finalIdxInput = 0;
 const offChainHashInput = 4;
@@ -1051,6 +1052,32 @@ class Synchronizer {
         return await this.treeDb.getStateByIdx(id);
     }
 
+    /**
+     * Get all rollup state
+     * @param {Number} id - rollup identifier
+     * @returns {Object} - rollup state  
+     */
+    async getStatesById(id) {
+        const accountState =  await this.treeDb.getStateByIdx(id);
+        console.log(accountState.ax);
+        console.log(accountState.ay);
+        let accountStates = await this.treeDb.getStateByAxAy(accountState.ax, accountState.ay);
+        let encPubkey = await this.treeDb.getEncPubKey(accountState.ax, accountState.ay);
+        let bufEncPubKey = Buffer.from(encPubkey, 'hex');
+
+        let loadKey = new NodeRSA();
+        loadKey.importKey(bufEncPubKey, 'pkcs1-public-der');
+        for(const account of accountStates){
+            account.ax = loadKey.encrypt(account.ax, 'base64');
+            account.ay = loadKey.encrypt(account.ay, 'base64');
+            account.rollupAddress = loadKey.encrypt(account.rollupAddress, 'base64');
+            account.amount = loadKey.encrypt(stringifyBigInts(account.amount), 'base64');
+            account.ethAddress = loadKey.encrypt(account.ethAddress, 'base64');
+        }
+        return accountStates;
+
+    }
+
      /**
      * Get encPubkey that matches with AxAy
      * @param {String} ax - x babyjubjub coordinate encoded as hexadecimal string 
@@ -1165,6 +1192,66 @@ class Synchronizer {
         // }
         ret['tx'] = res;
         ret['hash'] = eventForge;
+        return ret;
+    }
+
+
+     /**
+     * Get all off-chain enc transactions performed in a batch
+     * @param {Number} numBatch - rollup batch number 
+     * @returns {Array} - list of enc transactions
+     */
+    async getEncOffChainTxByBatch(numBatch) {
+        const res = [];
+        const ret = {};
+        // add off-chain tx
+        // if (this.mode === Constants.mode.archive){
+        const bb = await this.treeDb.buildBatch(this.maxTx, this.nLevels);
+        const tmpForgeArray = await this.db.getOrDefault(`${eventForgeBatchKey}${separator}${numBatch}`);
+        let eventForge = [];
+        if (tmpForgeArray) 
+            eventForge = this._fromString(tmpForgeArray);
+
+        for (const hashTx of eventForge) {
+            const offChainTxs = await this._getTxOffChain(hashTx);
+            await this._addFeePlanCoins(bb, offChainTxs.inputFeePlanCoin);
+            for (const tx of offChainTxs.txs) {
+                let encTx = {};
+                let loadKey = new NodeRSA();
+
+                let accountState = await this.treeDb.getStateByAccount(tx.coin, tx.fromAx, tx.fromAy);
+                console.log(accountState);
+
+                // get encPubKey
+                let encPubKey = await this.treeDb.getEncPubKey(tx.fromAx, tx.fromAy);
+                console.log('---------encPubKey------------');
+                console.log(encPubKey);
+                let bufEncPubKey = Buffer.from(encPubKey, 'hex');
+                console.log(bufEncPubKey);
+                // form RSA key
+                loadKey.importKey(bufEncPubKey, 'pkcs1-public-der');
+                console.log(loadKey.isPublic());
+
+                encTx.fromIdx = accountState.idx;
+                console.log(encTx.fromIdx);
+
+                encTx.fromAx = loadKey.encrypt(tx.fromAx, 'base64');
+                encTx.fromAy = loadKey.encrypt(tx.fromAy, 'base64');
+                encTx.amount = loadKey.encrypt(stringifyBigInts(tx.amount), 'base64');
+                encTx.coin = loadKey.encrypt(tx.coin.toString(), 'base64');
+                encTx.toAx = loadKey.encrypt(tx.toAx, 'base64');
+                encTx.toAy = loadKey.encrypt(tx.toAy, 'base64');
+                encTx.toEthAddr = loadKey.encrypt(tx.fromEthAddr, 'base64');
+
+                console.log(encTx);
+
+                res.push(encTx);
+            };
+        }
+        // }
+        ret['tx'] = res;
+        ret['hash'] = eventForge;
+
         return ret;
     }
 
