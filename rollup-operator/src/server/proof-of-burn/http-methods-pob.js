@@ -19,6 +19,7 @@ class HttpMethods {
      * @param {Object} rollupSynch - core rollup synchronizer
      * @param {Object} pobSynch - PoS rollup synchronizer
      * @param {Object} tokensSynch - token synchronizer
+     * @param {Object} encKey - operator encKey
      * @param {Object} logger - logger instance
      */
     constructor(
@@ -26,12 +27,14 @@ class HttpMethods {
         rollupSynch,
         pobSynch,
         tokensSynch,
+        encKey,
         logger 
     ){
         this.app = serverApp;
         this.rollupSynch = rollupSynch;
         this.pobSynch = pobSynch;
         this.tokensSynch = tokensSynch;
+        this.encKey = encKey;
         this.logger = logger;
     }
 
@@ -80,6 +83,18 @@ class HttpMethods {
                 this.logger.error(`Message error: ${error.message}`);
                 this.logger.debug(`Message error: ${error.stack}`);
                 res.status(400).send("Error getting operators list");
+            }
+        });
+
+        this.app.get("/operatorencpubkey", async (req, res) => {
+            try {
+                let encPubKeyDer = await this.encKey.exportKey('pkcs1-public-der');
+                let encPubKeyDerHex = encPubKeyDer.toString('hex');
+                res.status(200).json(stringifyBigInts(encPubKeyDerHex));
+            } catch (error) {
+                this.logger.error(`Message error: ${error.message}`);
+                this.logger.debug(`Message error: ${error.stack}`);
+                res.status(400).send("Error getting operators encrypto public key");
             }
         });
 
@@ -200,7 +215,7 @@ class HttpMethods {
                     res.status(404).send("Batch not found");
                 else {
                     let sinfoTX = stringifyBigInts(infoTx);
-                    sinfoTX.map(e => {
+                    sinfoTX.tx.map(e => {
                         const fromEthAddrBuff = Buffer.from(e.fromEthAddr);
                         const fromEthAddrHash = ruutils.hashBuffer(fromEthAddrBuff);
                         let fromEthAddrsign = privateKey.signPoseidon(fromEthAddrHash).toString();
@@ -235,6 +250,25 @@ class HttpMethods {
                         e.toEthAddr = '0x' + toEthAddrsign;
 
                     });
+                    res.status(200).json(sinfoTX);
+                }
+            } catch (error){
+                this.logger.error(`Message error: ${error.message}`);
+                this.logger.debug(`Message error: ${error.stack}`);
+                res.status(400).send("Error getting batch information");
+            }
+        });
+
+        this.app.get("/rencbatchTx/:numbatch", async (req, res) => {
+            const numBatch = req.params.numbatch;
+            try {
+                const infoTx = await this.rollupSynch.getEncOffChainTxByBatch(numBatch);
+                if (infoTx === null)
+                    res.status(404).send("Batch not found");
+                else {
+                    console.log('----------in rencbatchTx function-----------');
+                    console.log(infoTx);
+                    let sinfoTX = stringifyBigInts(infoTx);
                     res.status(200).json(sinfoTX);
                 }
             } catch (error){
@@ -428,6 +462,23 @@ class HttpMethods {
                 res.status(400).send("Error getting accounts information");
             }
         });
+
+        this.app.get("/encaccountsIdx/:idx", async (req, res) => {
+            const idx = req.params.idx;
+            
+            try {
+                const info = await this.rollupSynch.getStatesById(idx);
+                if (info === null || info.length === 0)
+                    res.status(404).send("Account not found");
+                else   
+                    res.status(200).json(stringifyBigInts(info));
+            } catch (error){
+                this.logger.error(`Message error: ${error.message}`);
+                this.logger.debug(`Message error: ${error.stack}`);
+                res.status(400).send("Error getting accounts information");
+            }
+        });
+
 
         this.app.get("/accountencPubKey/:address", async (req, res) => {
             const rollupAddress = req.params.address;
