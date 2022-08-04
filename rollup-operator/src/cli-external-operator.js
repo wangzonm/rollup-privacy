@@ -77,6 +77,14 @@ class CliExternalOperator {
     }
 
     /**
+     * Get operator encrypto public key
+     */
+    getOperatorEncPubKey(){
+        return axios.get(`${this.url}/operatorencpubkey`);
+
+    }
+
+    /**
      * Get exit information for a rollup account
      * Useful to make a withdraw afterwards
      * @param {Number} coin - coin identifier
