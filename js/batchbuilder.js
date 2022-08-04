@@ -10,6 +10,7 @@ const Constants = require("./constants");
 const constants = require("../rollup-operator/src/constants");
 
 const poseidonHash = poseidon.createHash(6, 8, 57);
+const { beInt2Buff, beBuff2int } = require("ffjavascript").utils;  //+ add
 
 module.exports = class BatchBuilder {
     constructor(rollupDB, batchNumber, root, initialIdx, maxNTx, nLevels) {
@@ -980,6 +981,74 @@ module.exports = class BatchBuilder {
             ]);
         }
         return onChainHash;
+    }
+
+    /**
+     * Return the tx data available Object
+     * @return {Object} txSlice - data available Object
+     */
+    getDataAvailableTxs() {   //+ add
+        if (!this.builded) throw new Error("Batch must first be builded");
+        let txSlice = {};
+
+        for (let i = 0; i < this.offChainTxs.length; i++){  //+ return Tx
+            const tx = this.offChainTxs[i];
+            const encodeTxData = this.getEncodeTxData(tx);
+            const hashTx = this.getHashTx(encodeTxData);
+
+            txSlice[hashTx] = tx;
+        }
+        return  txSlice;
+    }
+
+    /**
+     * Get the off-chain transaction data hash
+     * @param {Buffer} encodeTxData - available offChain encode transaction
+     * @returns {string} hashTx - offChain transaction hash
+     */
+    getHashTx(encodeTxData) {          //+ add
+        const hash = poseidon.createHash(6, 8, 57);
+        const encodeTxDataStr = utils.padding256(beBuff2int(encodeTxData));
+        const h = hash([encodeTxDataStr]);
+        const hashTx = `0x${h}`;
+        return hashTx
+    }
+
+    /**
+     * Get the Encode deposit off-chain data
+     * |Ax|Ay|EthAddress|Token|Nonce|Amount| - |32 bytes|32 bytes|20 bytes|4 bytes|4 bytes|16 bytes|
+     * @param {object} transaction -  available offChain transaction
+     * @returns {Buffer} Encoded offChain transaction
+     */
+    getEncodeTxData(transaction) {       //+ add
+        if (!this.builded) throw new Error("Batch must first be builded");
+        let buffer = Buffer.alloc(0);
+        buffer = Buffer.concat([
+            buffer,
+            beInt2Buff(Scalar.fromString(transaction.fromAx, 16), 32),
+            beInt2Buff(Scalar.fromString(transaction.fromAy, 16), 32),
+            beInt2Buff(Scalar.fromString(transaction.toAx, 16), 32),
+            beInt2Buff(Scalar.fromString(transaction.toAy, 16), 32),
+            beInt2Buff(Scalar.e(transaction.coin), 4),
+            beInt2Buff(Scalar.e(transaction.nonce), 4),
+            beInt2Buff(Scalar.e(transaction.amount), 16),
+        ])
+        return buffer;
+    }
+
+    /**
+     * Return array the available tx
+     * @return {Array} txSlice - array the available tx
+     */
+    getDataAvailableTxSli() {   //+ add
+        if (!this.builded) throw new Error("Batch must first be builded");
+        let txSlice = [];
+
+        for (let i = 0; i < this.offChainTxs.length; i++){  //+ return Tx
+            const tx = this.offChainTxs[i];
+            txSlice[i] = tx;
+        }
+        return  txSlice;
     }
 
     /**

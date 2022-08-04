@@ -339,6 +339,7 @@ let encKey;
         ///// LOOP MANAGER
         ///////////////////
         loopManager = new LoopManager(
+            initRollupDb,   //+  获取DB
             rollupSynch,
             pobSynch,
             pool, 
@@ -457,7 +458,8 @@ function loadServer(flagForge, expose, flagLAN, operatorMode){
             pobSynch,
             tokenSynch,
             encKey,
-            logger
+            logger,
+            loopManager //+ add
         );
 
         if (expose){

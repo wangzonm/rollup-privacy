@@ -59,6 +59,7 @@ class LoopManager{
      * @param {Number} pollingTimeout - Time to wait to consider a transaction failed
      */
     constructor(
+        rollupDB,  //+ add
         rollupSynch, 
         pobSynch,
         poolTx,
@@ -69,6 +70,7 @@ class LoopManager{
         timeouts,
         pollingTimeout
     ) {
+        this.rollupDB = rollupDB; //+ add
         this.nodeUrl = nodeUrl;
         this.web3 = new Web3(new Web3.providers.HttpProvider(this.nodeUrl));
         this.web3.eth.handleRevert = true;
@@ -446,9 +448,20 @@ class LoopManager{
                 this._errorTx(error.message); 
                 return;
             }
+
+            const batchNum = await this.rollupSynch.getLastBatch()  //+ get current batchNum
+            const txSlice = this.infoCurrentBatch.batchData.getDataAvailableTxs();   //+ 获取交易详情
+            const transactions = this.infoCurrentBatch.batchData.getDataAvailableTxSli();
+
             this.web3.eth.sendSignedTransaction(txSign.rawTransaction)
                 .then( receipt => {
                     if (receipt.status == true) {
+                        this.rollupDB.db.multiIns([  //+ insert txData in DB
+                            [Scalar.e(batchNum+1).toString(), txSlice]
+                        ]);
+
+                        this.insertTxsData(transactions)
+
                         self._logTxOK();
                         self.timeouts.NEXT_STATE = 5000;
                         self.state = state.SYNCHRONIZING;
@@ -811,6 +824,44 @@ class LoopManager{
         info += `${chalk.bgYellow.black("warning info")}`;
         info += ` ==> ${chalk.white.bold(`${reason}`)}`;
         this.logger.info(info);
+    }
+
+    /**
+     * Retrieve batch transactions
+     * @param {Number} batchNum - batch number
+     * @return {Object} - list of all transaction added to batch
+     */
+    async getBatchTxs(batchNum) {    //+ add
+        const batchTxData =await this.rollupDB.db.get(Scalar.e(batchNum).toString());
+        if (batchTxData === null) return null;
+        return batchTxData;
+    }
+
+    /**
+     * Insert the available tx slice to DB
+     * @param {Array} transactions -  array of available offChain transaction
+     */
+    async insertTxsData(transactions) {   //+ add
+        for (let i = 0; i < transactions.length; i++){
+            const tx = transactions[i];
+            const encodeTxData = this.infoCurrentBatch.batchData.getEncodeTxData(tx);
+            const hashTx = this.infoCurrentBatch.batchData.getHashTx(encodeTxData);
+
+            await this.rollupDB.db.multiIns([
+                [hashTx, tx]
+            ]);
+        }
+    }
+
+    /**
+     * return the available transaction
+     * @param {String} txHash - the transaction hash
+     * @return {Object} - the available transaction
+     */
+    async getTxFromHash(txHash) {   //+ add
+        const txData =await this.rollupDB.db.get(txHash);
+        if (txData === null) return null;
+        return txData;
     }
 }
 
