@@ -27,6 +27,7 @@ const CliServerProof = require("../../cli-proof-server");
 const LoopManager = require("../../proof-of-burn/loop-manager-pob");
 const Constants = require("../../constants");
 const { checkEnvVariables, checkPassEnv, getPassword } = require("../utils");
+const NodeRSA = require("node-rsa");
 
 const { argv } = require("yargs")
     .usage(`
@@ -66,10 +67,10 @@ let loopManager;
 let opManager;
 let logger;
 let pool;
+let encKey;
 
 (async () => {
     let info;
-
     // Parse client command arguments
     // const passString = (argv.passphrase) ? argv.passphrase : "nopassphrase";
     const pathEnvFile = (argv.pathconfig) ? argv.pathconfig : pathEnvFileDefault;
@@ -328,6 +329,12 @@ let pool;
             poolConfig.timeouts,
         );
 
+        ////////////////
+        ///// Generate EncKey
+        ////////////////
+        generateEncKey();
+
+
         ////////////////////
         ///// LOOP MANAGER
         ///////////////////
@@ -353,6 +360,43 @@ let pool;
         startPool();
     }
 })();
+
+// generate enckey
+
+function generateEncKey(){
+    let info = infoInit;
+    info += "Generator Encrypt Key";
+    logger.info(info);
+    workOnEncKey();
+}
+
+function workOnEncKey(){
+    encKey = new NodeRSA();
+    encKey.generateKeyPair(1024);
+
+    let publicDer = encKey.exportKey("pkcs1-public-der"); 
+    let privateDer = encKey.exportKey("pkcs1-private-der");
+
+
+    let  publicDerHex = publicDer.toString('hex');
+    console.log('----------------generate encKey successfully----');
+    console.log('----------------publicDerHex-----------------');
+    console.log(publicDerHex);
+    // fs.writeFile('./der/publlic.der',publicDer, err =>{
+    //     if(!err){
+    //         console.log('write public.der successfully!');
+    //     }else {
+    //         console.log(err);
+    //     }
+    // }); 
+    // fs.writeFile('./der/private.der',privateDer, err =>{
+    //     if(!err){
+    //         console.log('write private.der successfully!');
+    //     }else {
+    //         console.log(err);
+    //     }
+    // });
+}
 
 // start synchronizer PoB loop
 function startRollupPoB(){
@@ -412,6 +456,7 @@ function loadServer(flagForge, expose, flagLAN, operatorMode){
             rollupSynch,
             pobSynch,
             tokenSynch,
+            encKey,
             logger
         );
 
@@ -439,7 +484,36 @@ function loadServer(flagForge, expose, flagLAN, operatorMode){
             logger.http(infoHttpPost);
 
             appExternal.post("/pool", async (req, res) => {
-                const tx = unstringifyBigInts(req.body);
+                console.log('-----------in operator-pob----------');
+                console.log(req.body);
+                const encTx = unstringifyBigInts(req.body);
+                console.log('--------------encTx--------------');
+                console.log(encTx);
+
+                const tx = {
+                    toAx: encKey.decrypt(encTx.toAx, 'utf-8'),
+                    toAy: encKey.decrypt(encTx.toAy, 'utf-8'),
+                    toEthAddr: encKey.decrypt(encTx.toEthAddr, 'utf-8'),
+                    coin: Number(encKey.decrypt(encTx.coin, 'utf-8')),
+                    amount: encKey.decrypt(encTx.amount, 'utf-8'),
+                    nonce: encTx.nonce,
+                    fee: encTx.fee,
+                    rqOffset: encTx.rqOffset,
+                    onChain: encTx.onChain,
+                    newAccount: encTx.newAccount,
+                    r8x: encTx.r8x,
+                    r8y: encTx.r8y,
+                    s: encTx.s,
+                    fromAx: encKey.decrypt(encTx.fromAx, 'utf-8'),
+                    fromAy: encKey.decrypt(encTx.fromAy, 'utf-8'),
+                    fromEthAddr: encKey.decrypt(encTx.fromEthAddr, 'utf-8'),
+                }
+
+                console.log('-------------Tx-------------------');
+                console.log(tx);
+                
+                // const tx = unstringifyBigInts(req.body);
+
                 try {
                     const isAdded = await pool.addTx(tx);
                     if (isAdded === false)
