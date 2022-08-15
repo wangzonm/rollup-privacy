@@ -15,6 +15,7 @@ const {
     showStateAccount, withdrawOffChainTx, crossChainTx,
 } = require('./src/utils/cli-utils');
 const { error } = require('./helpers/list-errors');
+const { RsaKey } = require('../rollup-utils/rsakey.js');
 
 const walletPathDefault = './wallet.json';
 const configPathDefault = './config.json';
@@ -177,12 +178,16 @@ const chainidx = (argv.chainidx) ? argv.chainidx : 'nochainidx';
                     console.log('creating rollup wallet from mnemonic...\n');
                     wallet = await Wallet.fromMnemonic(mnemonic);
                     encWallet = await wallet.toEncryptedJson(passphrase);
+                    let encKey = new RsaKey();
+                    encWallet.rsaKey = JSON.parse(encKey.toEncryptedJson(passphrase));
                     printKeys(encWallet);
                 }
             } else {
                 console.log('creating new rollup wallet...\n');
                 wallet = await Wallet.createRandom();
                 encWallet = await wallet.toEncryptedJson(passphrase);
+                let encKey = new RsaKey();
+                encWallet.rsaKey = JSON.parse(encKey.toEncryptedJson(passphrase));
                 printKeys(encWallet);
             }
             fs.writeFileSync(walletpath, JSON.stringify(encWallet, null, 1), 'utf-8');
@@ -237,6 +242,29 @@ const chainidx = (argv.chainidx) ? argv.chainidx : 'nochainidx';
             }
             const readWallet = JSON.parse(fs.readFileSync(walletpath, 'utf-8'));
             printKeys(readWallet);
+            process.exit(0);
+        } else if(argv._[0].toUpperCase() === 'EXPORTKEYS') {
+            const passphrase = await getPassword();
+            if (walletpath === 'nowalletpath') {
+                if (fs.existsSync(configPath)) {
+                    actualConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                    if (actualConfig.wallet !== undefined) {
+                        walletpath = actualConfig.wallet;
+                    }
+                }
+            }
+            if (walletpath === 'nowalletpath') {
+                walletpath = walletPathDefault;                
+            }
+            if (!fs.existsSync(walletpath)) {
+                console.log('Please provide a valid path\n');
+                throw new Error(error.INVALID_PATH);
+            }
+            const readWallet = JSON.parse(fs.readFileSync(walletpath, 'utf-8'));
+            let JsonRsa = JSON.stringify(readWallet.rsaKey);
+            let bufferPriKey = RsaKey.fromEncryptedJson(JsonRsa, passphrase);
+            let stringPriKey = bufferPriKey.toString('hex');
+            fs.writeFileSync('rsakey.der', stringPriKey, 'utf-8');
             process.exit(0);
         } else if (argv._[0].toUpperCase() === 'OFFCHAINTX') {
             if (type === 'notype') {
@@ -579,4 +607,6 @@ function printKeys(wallet) {
     console.log('  Babyjubjub points: ');
     console.log(`    Ax: ${chalk.blue(`0x${wallet.babyjubWallet.public.ax}`)}`);
     console.log(`    Ay: ${chalk.blue(`0x${wallet.babyjubWallet.public.ay}`)}`);
+    console.log('  Rsa Key: ');
+    console.log(`    Public : ${chalk.blue(`0x${wallet.rsaKey.public}`)}`);
 }

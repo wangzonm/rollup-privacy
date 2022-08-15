@@ -31,7 +31,10 @@ async function crossChainTx(urlOperator, chainAccountIdx, amount, walletJson, pa
 
 async function depositTx(nodeEth, addressSC, loadAmount, tokenId, walletJson, passphrase, ethAddress, abi, gasLimit, gasMultiplier) {
     const walletRollup = await Wallet.fromEncryptedJson(walletJson, passphrase);
-    return deposit(nodeEth, addressSC, loadAmount, tokenId, walletRollup, ethAddress, abi, gasLimit, gasMultiplier);
+    // here need to get rsa public key
+    console.log('walletJson.rsaKey.public');
+    console.log(walletJson.rsaKey.public);
+    return deposit(nodeEth, addressSC, loadAmount, tokenId, walletRollup, ethAddress, walletJson.rsaKey.public, abi, gasLimit, gasMultiplier);
 }
 
 async function depositOnTopTx(nodeEth, addressSC, loadAmount, tokenId, babyjubCompressed,

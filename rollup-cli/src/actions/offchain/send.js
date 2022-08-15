@@ -3,6 +3,7 @@ const { stringifyBigInts } = require('ffjavascript').utils;
 
 const CliExternalOperator = require('../../../../rollup-operator/src/cli-external-operator');
 const Constants = require('../../../../js/constants');
+const NodeRSA = require('node-rsa');
 
 // check the nonce from the operator and Nonce object and decide wich one use
 async function _checkNonce(responseLeaf, currentBatch, nonceObject) {
@@ -94,7 +95,63 @@ async function send(urlOperator, babyjubTo, amount, walletRollup, tokenId, fee, 
 
     await walletRollup.signRollupTx(tx); // sign included in transaction
     const parseTx = stringifyBigInts(tx);
-    const resTx = await apiOperator.sendTx(parseTx);
+
+
+    let opEncPubKey;
+    // try {
+    //     const res = await apiOperator.getOperatorEncPubKey();
+    //     opEncPubKey = res.data;
+    //     console.log('opEncPubKey:' + opEncPubKey);
+    // } catch (err) {
+    //     console.log(`${err.message}`);
+    // }
+
+    const resp = await apiOperator.getOperatorEncPubKey();
+    if(resp.status.toString() !== '200'){
+        return resp;
+    }
+    opEncPubKey = resp.data;
+    console.log('opEncPubKey:' + opEncPubKey);
+
+    let opKey = new NodeRSA();
+    opKey.importKey(Buffer.from(opEncPubKey, 'hex'), 'pkcs1-public-der');
+
+    const encTx = {
+        toAx: opKey.encrypt(tx.toAx, 'base64'),
+        toAy: opKey.encrypt(tx.toAy, 'base64'),
+        toEthAddr: opKey.encrypt(tx.toEthAddr, 'base64'),
+        coin: opKey.encrypt(tx.coin.toString(), 'base64'),
+        amount: opKey.encrypt(tx.amount, 'base64'),
+        nonce: nonceToSend,
+        fee,
+        rqOffset: 0,
+        onChain: 0,
+        newAccount: 0,
+        r8x: tx.r8x,
+        r8y: tx.r8y,
+        s: tx.s,
+        fromAx: opKey.encrypt(tx.fromAx, 'base64'),
+        fromAy: opKey.encrypt(tx.fromAy, 'base64'),
+        fromEthAddr: opKey.encrypt(tx.fromEthAddr, 'base64'),
+
+    }
+    // const parseTx = stringifyBigInts(tx);
+    // const resTx = await apiOperator.sendTx(parseTx);
+
+    const parseEncTx = stringifyBigInts(encTx);
+    console.log('---------in rollup-cli------sender.js--------');
+    console.log('-----------tx-------------');
+    console.log(tx);
+    console.log('---------parseTx----------');
+    console.log(parseTx);
+    console.log('-------------encTx--------------------------');
+    console.log(encTx);
+    console.log('--------------parseEncTx-------------------');
+    console.log(parseEncTx);
+
+    
+    const resTx = await apiOperator.sendTx(parseEncTx);
+
 
     let nonceObjectToWrite;
     if (resTx.status.toString() === '200') {
