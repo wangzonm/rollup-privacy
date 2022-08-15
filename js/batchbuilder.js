@@ -989,16 +989,18 @@ module.exports = class BatchBuilder {
      */
     getDataAvailableTxs() {   //+ add
         if (!this.builded) throw new Error("Batch must first be builded");
-        let txSlice = {};
+        let txHashSlice = {};
 
         for (let i = 0; i < this.offChainTxs.length; i++){  //+ return Tx
             const tx = this.offChainTxs[i];
             const encodeTxData = this.getEncodeTxData(tx);
             const hashTx = this.getHashTx(encodeTxData);
+            console.log('CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC')
+	    console.log('hashTx:', hashTx)
 
-            txSlice[hashTx] = tx;
+            txHashSlice[i] = hashTx;
         }
-        return  txSlice;
+        return  txHashSlice;
     }
 
     /**
@@ -1049,7 +1051,7 @@ module.exports = class BatchBuilder {
             txSlice[i] = tx;
         }
         return  txSlice;
-    }
+    }    
 
     /**
      * Return the encoded data available

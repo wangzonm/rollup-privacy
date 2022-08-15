@@ -339,7 +339,6 @@ let encKey;
         ///// LOOP MANAGER
         ///////////////////
         loopManager = new LoopManager(
-            initRollupDb,   //+  获取DB
             rollupSynch,
             pobSynch,
             pool, 

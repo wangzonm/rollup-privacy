@@ -57,7 +57,7 @@ class HttpMethods {
                 res.status(400).send("Error getting batch transactions information");
             }
         });
-
+        
         this.app.get("/batchTransactions/:batchNum", async (req, res) => { //+ add
             const batchNum = req.params.batchNum;
 
@@ -70,6 +70,7 @@ class HttpMethods {
                 res.status(400).send("Error getting batch transactions information");
             }
         });
+
         this.app.get("/state", async (req, res) => {
             try {
                 const generalInfo = await utils.getGeneralInfoPob(this.rollupSynch, this.pobSynch); 
