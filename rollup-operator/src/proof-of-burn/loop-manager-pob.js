@@ -569,7 +569,6 @@ class LoopManager{
                     this.poolTx.rollupDB.db.multiIns([  //+ insert txData in DB
                         [Scalar.e(batchNum+1).toString(), txHashSlice]
                     ]);
-                    this.insertTxsData(transactions)
 
                     self.timeouts.NEXT_STATE = 5000;
                     self.state = state.SYNCHRONIZING;
@@ -863,23 +862,7 @@ class LoopManager{
         }
         return txHashSlice;
     }
-
-    /**
-     * Insert the available tx slice to DB
-     * @param {Array} transactions -  array of available offChain transaction
-     */
-    async insertTxsData(transactions) {   //+ add
-        for (let i = 0; i < transactions.length; i++){
-            const tx = transactions[i];
-
-            const encodeTxData = this.infoCurrentBatch.batchData.getEncodeTxData(tx);
-            const hashTx = this.infoCurrentBatch.batchData.getHashTx(encodeTxData);
-
-            await this.poolTx.rollupDB.db.multiIns([
-                [hashTx, this.poolTx._tx2Array(tx)]
-            ]);
-        }
-    }
+    
 }
 
 module.exports = LoopManager;
