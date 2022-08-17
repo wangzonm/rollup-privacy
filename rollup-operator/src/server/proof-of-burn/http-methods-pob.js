@@ -199,6 +199,31 @@ class HttpMethods {
         });
 
          /**
+         * @api {get} /pushTxHash/:numbatch 
+         * @apiSampleRequest http://106.3.133.180:9000/pushTxHash/154 
+         * @apiVersion 0.0.1
+         * @apiGroup batch operation
+         * @apiDescription get push tx hash in a batch
+         * @apiParam {number} numbatch batch's number
+         * 
+         * **/
+
+        this.app.get("/pushTxHash/:numbatch", async (req, res) => {
+            const numBatch = req.params.numbatch;
+            try {
+                const infoTx = await this.rollupSynch.getPushTxHashByBatch(numBatch);
+                if (infoTx === null)
+                    res.status(404).send("Batch not found");
+                else   
+                    res.status(200).json(stringifyBigInts(infoTx));
+            } catch (error){
+                this.logger.error(`Message error: ${error.message}`);
+                this.logger.debug(`Message error: ${error.stack}`);
+                res.status(400).send("Error getting batch information");
+            }
+        });
+
+         /**
          * @api {get} /encbatchTx/:numbatch 
          * @apiSampleRequest http://106.3.133.180:9000/encbatchTx/154 
          * @apiVersion 0.0.1
@@ -462,6 +487,42 @@ class HttpMethods {
                 res.status(400).send("Error getting accounts information");
             }
         });
+        /**
+         * getIdxs get all idx by rollup address
+         */
+
+        this.app.get("/getIdxs/:address", async (req, res) => {
+            const rollupAddress = req.params.address;
+            
+            let compressHex;
+            if (rollupAddress.startsWith("0x")) compressHex = rollupAddress.slice(2);
+            else compressHex = rollupAddress;
+
+            const buf = Buffer.from(compressHex, "hex"); 
+            const point = babyJub.unpackPoint(buf);
+            
+            // check point is decompressed correctly
+            if (!point){
+                res.status(404).send("Account not found");
+                return;
+            }
+
+            const ax = point[0].toString(16);
+            const ay = point[1].toString(16);
+            
+            try {
+                const info = await this.rollupSynch.getIdxsByAxAy(ax, ay);
+                if (info === null || info.length === 0)
+                    res.status(404).send("Account not found");
+                else   
+                    res.status(200).json(stringifyBigInts(info));
+            } catch (error){
+                this.logger.error(`Message error: ${error.message}`);
+                this.logger.debug(`Message error: ${error.stack}`);
+                res.status(400).send("Error getting accounts information");
+            }
+        });
+
 
         this.app.get("/encaccountsIdx/:idx", async (req, res) => {
             const idx = req.params.idx;

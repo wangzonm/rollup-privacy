@@ -1077,6 +1077,24 @@ class Synchronizer {
         return accountStates;
 
     }
+    /**
+     * 
+     * @param {String} ax - x babyjubjub coordinate encoded as hexadecimal string 
+     * @param {String} ay - y babyjubjub coordinate encoded as hexadecimal string
+     * @returns {object}  
+     */
+    async getIdxsByAxAy(ax, ay) {
+        let accountStates = await this.treeDb.getStateByAxAy(ax, ay);
+        let ret = {};
+        let idxs = [];
+        for(const account of accountStates){
+            idxs.push(account.idx);
+        }
+        console.log('--------idx--------------------');
+        console.log(idxs);
+        ret.idxs = idxs;
+        return ret;
+    }
 
      /**
      * Get encPubkey that matches with AxAy
@@ -1191,6 +1209,34 @@ class Synchronizer {
         }
         // }
         ret['tx'] = res;
+        ret['hash'] = eventForge;
+        return ret;
+    }
+
+
+    /**
+     * Get push tx hash in a batch
+     * @param {Number} numBatch - rollup batch number 
+     * @returns {Array} - list of push tx hash
+     */
+    async getPushTxHashByBatch(numBatch) {
+        const res = [];
+        const ret = {};
+        // add off-chain tx
+        // if (this.mode === Constants.mode.archive){
+        const bb = await this.treeDb.buildBatch(this.maxTx, this.nLevels);
+        const tmpForgeArray = await this.db.getOrDefault(`${eventForgeBatchKey}${separator}${numBatch}`);
+        let eventForge = [];
+        if (tmpForgeArray) 
+            eventForge = this._fromString(tmpForgeArray);
+
+        // for (const hashTx of eventForge) {
+        //     const offChainTxs = await this._getTxOffChain(hashTx);
+        //     await this._addFeePlanCoins(bb, offChainTxs.inputFeePlanCoin);
+        //     for (const tx of offChainTxs.txs) res.push(tx);
+        // }
+        // }
+        // ret['tx'] = res;
         ret['hash'] = eventForge;
         return ret;
     }
