@@ -292,14 +292,14 @@ const chainidx = (argv.chainidx) ? argv.chainidx : 'nochainidx';
                 if (type.toUpperCase() === 'SEND') {
                     const res = await sendTx(urlOperator, recipient, amount, wallet, passphrase, tokenId,
                         feeTable[fee], nonce, actualNonce);
-                    console.log(`Status: ${res.status}, Nonce: ${res.nonce}`);
+                    console.log(`Status: ${res.status}, Nonce: ${res.nonce}, txHash: ${res.txHash}`);
                     if (res.status.toString() === '200') {
                         fs.writeFileSync(noncePath, JSON.stringify(res.nonceObject, null, 1), 'utf-8');
                     }
                 } else if (type.toUpperCase() === 'WITHDRAWOFFCHAIN') {
                     const res = await withdrawOffChainTx(urlOperator, amount, wallet, passphrase, tokenId, feeTable[fee],
                         nonce, actualNonce);
-                    console.log(`Status: ${res.status}, Nonce: ${res.nonce}`);
+                    console.log(`Status: ${res.status}, Nonce: ${res.nonce}, txHash: ${res.txHash}`);
                     if (res.status.toString() === '200') {
                         fs.writeFileSync(noncePath, JSON.stringify(res.nonceObject, null, 1), 'utf-8');
                     }
@@ -314,7 +314,7 @@ const chainidx = (argv.chainidx) ? argv.chainidx : 'nochainidx';
                 } else if (type.toUpperCase() === 'CROSSCHAIN'){
                     const res = await crossChainTx(urlOperator, chainidx, amount, wallet, passphrase, tokenId, feeTable[fee],
                         nonce, actualNonce);
-                    console.log(`Status: ${res.status}, Nonce: ${res.nonce}`);
+                    console.log(`Status: ${res.status}, Nonce: ${res.nonce}, txHash: ${res.txHash}`);
                     if (res.status.toString() === '200') {
                         fs.writeFileSync(noncePath, JSON.stringify(res.nonceObject, null, 1), 'utf-8');
                     }
