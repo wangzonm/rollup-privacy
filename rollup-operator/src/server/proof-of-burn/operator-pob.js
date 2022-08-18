@@ -524,10 +524,11 @@ function loadServer(flagForge, expose, flagLAN, operatorMode){
 
                 try {
                     const isAdded = await pool.addTx(tx);
-                    if (isAdded === false)
+                    if (isAdded.isAdded === false)
                         res.status(400).send("Error adding transaction to pool");   
                     else
-                        res.sendStatus(200);
+                        // res.sendStatus(200);
+                        res.status(200).json({txHash : isAdded.txHash});
                 } catch (error) {
                     logger.error(`Message error: ${error.message}`);
                     logger.debug(`Message error: ${error.stack}`);

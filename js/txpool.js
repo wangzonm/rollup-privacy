@@ -263,7 +263,16 @@ class TXPool {
         });
 
         await this._updateSlots();
-        return true;
+        const encodeBuffer = utils.calEncodeTxData(tx);
+        const strTxhash = utils.calHashTx(encodeBuffer);
+
+        let res = {};
+        res.isAdded = true;
+        res.txHash = strTxhash;
+        console.log("new tx hash");
+        console.log(strTxhash);
+        // return true;
+        return res;
     }
 
     /**
