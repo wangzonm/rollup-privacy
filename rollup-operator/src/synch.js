@@ -798,7 +798,7 @@ class Synchronizer {
                     await this._addExitEntry(tx, batch.batchNumber, tmpNewAccounts);
                 }
                 // }
-
+                
                 // handle cross-chain tx
                 const toIdx = GlobalConst.getMultiChainAccountIdx(tx.toAx, tx.toAy);
                 if (toIdx != null && toIdx != GlobalConst.exitAccount) {
