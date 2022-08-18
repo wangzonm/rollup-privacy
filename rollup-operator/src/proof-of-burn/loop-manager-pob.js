@@ -4,6 +4,7 @@ const winston = require("winston");
 const chalk = require("chalk");
 const { stringifyBigInts } = require("ffjavascript").utils;
 const Scalar = require("ffjavascript").Scalar;
+const NodeRSA = require("node-rsa");
 
 const { timeout, buildPublicInputsSm, generateCall } = require("../utils"); 
 
@@ -446,9 +447,17 @@ class LoopManager{
                 this._errorTx(error.message); 
                 return;
             }
+
+            const batchNum = await this.rollupSynch.getLastBatch()  //+ get current batchNum
+            const txHashSlice = this.infoCurrentBatch.batchData.getDataAvailableTxs();   //+ 获取交易详情
+
             this.web3.eth.sendSignedTransaction(txSign.rawTransaction)
                 .then( receipt => {
                     if (receipt.status == true) {
+                        this.poolTx.rollupDB.db.multiIns([  //+ insert txData in DB
+                            [Scalar.e(batchNum+1).toString(), txHashSlice]
+                        ]);
+
                         self._logTxOK();
                         self.timeouts.NEXT_STATE = 5000;
                         self.state = state.SYNCHRONIZING;
@@ -560,16 +569,9 @@ class LoopManager{
             return;
         }
 
-        const batchNum = await this.rollupSynch.getLastBatch()  //+ get current batchNum
-        const txHashSlice = this.infoCurrentBatch.batchData.getDataAvailableTxs();   //+ 获取交易详情
-
         this.web3.eth.sendSignedTransaction(txSign.rawTransaction)
             .then( receipt => {
                 if (receipt.status == true) {
-                    this.poolTx.rollupDB.db.multiIns([  //+ insert txData in DB
-                        [Scalar.e(batchNum+1).toString(), txHashSlice]
-                    ]);
-
                     self.timeouts.NEXT_STATE = 5000;
                     self.state = state.SYNCHRONIZING;
                     self._logTxOK();
