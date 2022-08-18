@@ -489,28 +489,35 @@ function loadServer(flagForge, expose, flagLAN, operatorMode){
                 const encTx = unstringifyBigInts(req.body);
                 console.log('--------------encTx--------------');
                 console.log(encTx);
-
-                const tx = {
-                    toAx: encKey.decrypt(encTx.toAx, 'utf-8'),
-                    toAy: encKey.decrypt(encTx.toAy, 'utf-8'),
-                    toEthAddr: encKey.decrypt(encTx.toEthAddr, 'utf-8'),
-                    coin: Number(encKey.decrypt(encTx.coin, 'utf-8')),
-                    amount: encKey.decrypt(encTx.amount, 'utf-8'),
-                    nonce: encTx.nonce,
-                    fee: encTx.fee,
-                    rqOffset: encTx.rqOffset,
-                    onChain: encTx.onChain,
-                    newAccount: encTx.newAccount,
-                    r8x: encTx.r8x,
-                    r8y: encTx.r8y,
-                    s: encTx.s,
-                    fromAx: encKey.decrypt(encTx.fromAx, 'utf-8'),
-                    fromAy: encKey.decrypt(encTx.fromAy, 'utf-8'),
-                    fromEthAddr: encKey.decrypt(encTx.fromEthAddr, 'utf-8'),
-                }
+                console.log('---------------encTx.toEthAddr.length---------------');
+                console.log(encTx.toEthAddr.length);
+                let tx;
+                if(encTx.toEthAddr.length !== 42)
+                    tx = {
+                        toAx: encKey.decrypt(encTx.toAx, 'utf-8'),
+                        toAy: encKey.decrypt(encTx.toAy, 'utf-8'),
+                        toEthAddr: encKey.decrypt(encTx.toEthAddr, 'utf-8'),
+                        coin: Number(encKey.decrypt(encTx.coin, 'utf-8')),
+                        amount: encKey.decrypt(encTx.amount, 'utf-8'),
+                        nonce: encTx.nonce,
+                        fee: encTx.fee,
+                        rqOffset: encTx.rqOffset,
+                        onChain: encTx.onChain,
+                        newAccount: encTx.newAccount,
+                        r8x: encTx.r8x,
+                        r8y: encTx.r8y,
+                        s: encTx.s,
+                        fromAx: encKey.decrypt(encTx.fromAx, 'utf-8'),
+                        fromAy: encKey.decrypt(encTx.fromAy, 'utf-8'),
+                        fromEthAddr: encKey.decrypt(encTx.fromEthAddr, 'utf-8'),
+                    };
+                else
+                    tx = encTx;
 
                 console.log('-------------Tx-------------------');
                 console.log(tx);
+                console.log('--------------tx.toEthAddr.length--------------');
+                console.log(tx.toEthAddr.length);
                 
                 // const tx = unstringifyBigInts(req.body);
 
