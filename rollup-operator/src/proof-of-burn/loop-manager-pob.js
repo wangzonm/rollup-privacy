@@ -559,9 +559,17 @@ class LoopManager{
             this._errorTx(error.message);
             return;
         }
+
+        const batchNum = await this.rollupSynch.getLastBatch()  //+ get current batchNum
+        const txHashSlice = this.infoCurrentBatch.batchData.getDataAvailableTxs();   //+ 获取交易详情
+
         this.web3.eth.sendSignedTransaction(txSign.rawTransaction)
             .then( receipt => {
                 if (receipt.status == true) {
+                    this.poolTx.rollupDB.db.multiIns([  //+ insert txData in DB
+                        [Scalar.e(batchNum+1).toString(), txHashSlice]
+                    ]);
+
                     self.timeouts.NEXT_STATE = 5000;
                     self.state = state.SYNCHRONIZING;
                     self._logTxOK();
@@ -812,6 +820,49 @@ class LoopManager{
         info += ` ==> ${chalk.white.bold(`${reason}`)}`;
         this.logger.info(info);
     }
+
+    /**
+     * Retrieve batch transactions
+     * @param {Number} batchNum - batch number
+     * @return {Object} - list of all transaction added to batch
+     */
+    async getBatchTxs(batchNum) {    //+ add
+        const batchTxData =await this.poolTx.rollupDB.db.get(Scalar.e(batchNum).toString());
+        console.log('batchTxData:', batchTxData)
+        if (batchTxData === null) return null;
+        let loadKey = new NodeRSA();
+        let txHashSlice = {};
+
+        for (let i in batchTxData){
+            const tx = batchTxData[i];
+            let txData = {};
+
+            let encPubKey = await this.rollupSynch.treeDb.getEncPubKey(tx.fromAx, tx.fromAy);
+            let bufEncPubKey = Buffer.from(encPubKey, 'hex');
+            loadKey.importKey(bufEncPubKey, 'pkcs1-public-der');
+
+            txData.fromAx = loadKey.encrypt(tx.fromAx, 'base64');
+            txData.fromAy = loadKey.encrypt(tx.fromAy, 'base64');
+            txData.toAx = loadKey.encrypt(tx.toAx, 'base64');
+            txData.toAy = loadKey.encrypt(tx.toAy, 'base64');
+            txData.fromEthAddr = loadKey.encrypt(tx.fromEthAddr, 'base64');
+            txData.toEthAddr = loadKey.encrypt(tx.toEthAddr, 'base64');
+            txData.amount = loadKey.encrypt(stringifyBigInts(tx.amount), 'base64');
+            txData.coin = loadKey.encrypt(tx.coin.toString(), 'base64');
+            txData.fee = loadKey.encrypt(stringifyBigInts(tx.fee), 'base64');
+
+            txData.type = tx.type;
+            txData.fromIdx = tx.fromIdx;
+            txData.toIdx = tx.toIdx;
+            txData.nonce = tx.nonce;
+            txData.timestamp = tx.timestamp;
+            txData.hashTx =tx.hashTx;
+
+            txHashSlice[i] = txData;
+        }
+        return txHashSlice;
+    }
+    
 }
 
 module.exports = LoopManager;

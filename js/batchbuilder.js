@@ -8,6 +8,7 @@ const SMTTmpDb = require("./smttmpdb");
 const utils = require("./utils");
 const Constants = require("./constants");
 const constants = require("../rollup-operator/src/constants");
+const { beInt2Buff, beBuff2int } = require("ffjavascript").utils;  //+ add
 
 const poseidonHash = poseidon.createHash(6, 8, 57);
 
@@ -980,6 +981,91 @@ module.exports = class BatchBuilder {
             ]);
         }
         return onChainHash;
+    }
+
+    /**
+     * Return the tx data available Object
+     * @return {Object} txSlice - data available Object
+     */
+    getDataAvailableTxs() {   //+ add
+        if (!this.builded) throw new Error("Batch must first be builded");
+        let txHashSlice = {};
+
+        for (let i = 0; i < this.offChainTxs.length; i++){  //+ return Tx
+            let txData = {};
+            const tx = this.offChainTxs[i];
+            const encodeTxData = this.getEncodeTxData(tx);
+            const hashTx = this.getHashTx(encodeTxData);
+
+            txData.fromAx = tx.fromAx;
+            txData.fromAy = tx.fromAy;
+            txData.toAx = tx.toAx;
+            txData.toAy = tx.toAy;
+            txData.fromEthAddr = tx.fromEthAddr;
+            txData.toEthAddr = tx.toEthAddr;
+            txData.amount = tx.amount;
+            txData.coin = tx.coin;
+            txData.fee = tx.fee;
+
+            txData.type = this.getType(tx.toIdx);
+            txData.fromIdx = tx.fromIdx;
+            txData.toIdx = tx.toIdx;
+            txData.nonce = tx.nonce;
+            txData.timestamp = tx.timestamp;
+            txData.hashTx =hashTx;
+
+            txHashSlice[i] = txData;
+        }
+        return  txHashSlice;
+    }
+
+    /**
+     * 0: transfer  1: deposit  2: withdraw  4: crossChainTransfer
+     * @param {Number} toIdx
+     * @returns {string} type
+     */
+    getType(toIdx) {
+        if(Scalar.eq(toIdx, Constants.exitAccountIdx)) {
+            return 'withdraw';
+        } else if(Constants.isMultiChainAccount(toIdx)) {
+            return 'crossChainTransfer';
+        }
+        return 'transfer';
+    }
+
+    /**
+     * Get the off-chain transaction data hash
+     * @param {Buffer} encodeTxData - available offChain encode transaction
+     * @returns {string} hashTx - offChain transaction hash
+     */
+    getHashTx(encodeTxData) {          //+ add
+        const hash = poseidon.createHash(6, 8, 57);
+        const encodeTxDataStr = utils.padding256(beBuff2int(encodeTxData));
+        const h = hash([encodeTxDataStr]);
+        const hashTx = `0x${h}`;
+        return hashTx
+    }
+
+    /**
+     * Get the Encode deposit off-chain data
+     * |Ax|Ay|EthAddress|Token|Nonce|Amount| - |32 bytes|32 bytes|20 bytes|4 bytes|4 bytes|16 bytes|
+     * @param {object} transaction -  available offChain transaction
+     * @returns {Buffer} Encoded offChain transaction
+     */
+    getEncodeTxData(transaction) {       //+ add
+        if (!this.builded) throw new Error("Batch must first be builded");
+        let buffer = Buffer.alloc(0);
+        buffer = Buffer.concat([
+            buffer,
+            beInt2Buff(Scalar.fromString(transaction.fromAx, 16), 32),
+            beInt2Buff(Scalar.fromString(transaction.fromAy, 16), 32),
+            beInt2Buff(Scalar.fromString(transaction.toAx, 16), 32),
+            beInt2Buff(Scalar.fromString(transaction.toAy, 16), 32),
+            beInt2Buff(Scalar.e(transaction.coin), 4),
+            beInt2Buff(Scalar.e(transaction.nonce), 4),
+            beInt2Buff(Scalar.e(transaction.amount), 16),
+        ])
+        return buffer;
     }
 
     /**
