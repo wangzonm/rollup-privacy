@@ -21,7 +21,6 @@ class HttpMethods {
      * @param {Object} tokensSynch - token synchronizer
      * @param {Object} encKey - operator encKey
      * @param {Object} logger - logger instance
-     * @param {Object} loopManager - Manage operator actions  //+ add
      */
     constructor(
         serverApp,
@@ -29,8 +28,7 @@ class HttpMethods {
         pobSynch,
         tokensSynch,
         encKey,
-        logger,
-        loopManager  //+ add
+        logger
     ){
         this.app = serverApp;
         this.rollupSynch = rollupSynch;
@@ -38,7 +36,6 @@ class HttpMethods {
         this.tokensSynch = tokensSynch;
         this.encKey = encKey;
         this.logger = logger;
-        this.loopManager = loopManager;  //+ add
     }
 
     /**
@@ -49,7 +46,7 @@ class HttpMethods {
             const batchNum = req.params.batchNum;
 
             try {
-                const infoTxs= await this.loopManager.getBatchTxs(batchNum);
+                const infoTxs= await this.rollupSynch.getBatchTxs(batchNum);
                 res.status(200).json(stringifyBigInts(infoTxs));
             } catch (error){
                 this.logger.error(`Message error: ${error.message}`);

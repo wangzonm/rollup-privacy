@@ -457,8 +457,7 @@ function loadServer(flagForge, expose, flagLAN, operatorMode){
             pobSynch,
             tokenSynch,
             encKey,
-            logger,
-            loopManager //+ add
+            logger
         );
 
         if (expose){
