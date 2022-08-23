@@ -159,6 +159,7 @@ async function send(urlOperator, babyjubTo, amount, walletRollup, tokenId, fee, 
     }
     const res = {
         status: resTx.status,
+        txHash: resTx.data.txHash,
         currentBatch,
         nonce: nonceToSend,
         nonceObject: nonceObjectToWrite,

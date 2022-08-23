@@ -428,6 +428,44 @@ function computeFee(amount, feeSelector){
     return fee2Charge;
 }
 
+
+ /**
+    * Get the Encode off-chain data
+    * |Ax|Ay|EthAddress|Token|Nonce|Amount| - |32 bytes|32 bytes|20 bytes|4 bytes|4 bytes|16 bytes|
+    * @param {object} transaction -  available offChain transaction
+    * @returns {Buffer} Encoded offChain transaction
+    */
+function calEncodeTxData(transaction) {       //+ add
+    // if (!this.builded) throw new Error("Batch must first be builded");
+    let buffer = Buffer.alloc(0);
+    buffer = Buffer.concat([
+        buffer,
+        beInt2Buff(Scalar.fromString(transaction.fromAx, 16), 32),
+        beInt2Buff(Scalar.fromString(transaction.fromAy, 16), 32),
+        beInt2Buff(Scalar.fromString(transaction.toAx, 16), 32),
+        beInt2Buff(Scalar.fromString(transaction.toAy, 16), 32),
+        beInt2Buff(Scalar.e(transaction.coin), 4),
+        beInt2Buff(Scalar.e(transaction.nonce), 4),
+        beInt2Buff(Scalar.e(transaction.amount), 16),
+    ])
+    return buffer;
+}
+
+
+ /**
+    * Get the off-chain transaction data hash
+    * @param {Buffer} encodeTxData - available offChain encode transaction
+    * @returns {string} hashTx - offChain transaction hash
+    */
+    function calHashTx(encodeTxData) {          //+ add
+        const hash = poseidon.createHash(6, 8, 57);
+        const encodeTxDataStr = padding256(beBuff2int(encodeTxData));
+        const h = hash([encodeTxDataStr]);
+        const hashTx = `0x${h}`;
+        return hashTx
+    }
+
+
 module.exports.padZeros = padZeros;
 module.exports.padding256 = padding256; 
 module.exports.buildTxData = buildTxData;
@@ -447,3 +485,5 @@ module.exports.decodeDepositOffChain = decodeDepositOffChain;
 module.exports.decodeDataAvailability = decodeDataAvailability;
 module.exports.computeFee = computeFee;
 module.exports.floorFix2Float = floorFix2Float; 
+module.exports.calEncodeTxData = calEncodeTxData; 
+module.exports.calHashTx = calHashTx; 
