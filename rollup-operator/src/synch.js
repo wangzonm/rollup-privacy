@@ -1059,8 +1059,7 @@ class Synchronizer {
      */
     async getStatesById(id) {
         const accountState =  await this.treeDb.getStateByIdx(id);
-        console.log(accountState.ax);
-        console.log(accountState.ay);
+        if(!accountState) return null;
         let accountStates = await this.treeDb.getStateByAxAy(accountState.ax, accountState.ay);
         let encPubkey = await this.treeDb.getEncPubKey(accountState.ax, accountState.ay);
         let bufEncPubKey = Buffer.from(encPubkey, 'hex');
@@ -1085,6 +1084,7 @@ class Synchronizer {
      */
     async getIdxsByAxAy(ax, ay) {
         let accountStates = await this.treeDb.getStateByAxAy(ax, ay);
+        if(!accountStates) return null;
         let ret = {};
         let idxs = [];
         for(const account of accountStates){
