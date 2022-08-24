@@ -153,6 +153,7 @@ class RollupDB {
     async getEncPubKey(ax, ay) {
         let keyEncPubAxAy = Scalar.add( Scalar.add(Constants.DB_RsaKeyAxAy, Scalar.fromString(ax, 16)), Scalar.fromString(ay, 16));
         const valEncPubKey = await this.db.get(keyEncPubAxAy);
+        if(!valEncPubKey) return null;
         const encPubKey = Scalar.e(valEncPubKey).toString(16);
         console.log('----------------in---getEncPubKey-------------------');
         console.log('keyEncPubAxAy');
