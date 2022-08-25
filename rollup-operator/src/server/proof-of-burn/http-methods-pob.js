@@ -47,7 +47,10 @@ class HttpMethods {
 
             try {
                 const infoTxs= await this.rollupSynch.getBatchTxs(batchNum);
-                res.status(200).json(stringifyBigInts(infoTxs));
+                if(infoTxs == null)
+                    res.status(404).send("Batch not found");
+                else
+                    res.status(200).json(stringifyBigInts(infoTxs));
             } catch (error){
                 this.logger.error(`Message error: ${error.message}`);
                 this.logger.debug(`Message error: ${error.stack}`);
