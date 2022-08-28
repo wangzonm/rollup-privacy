@@ -994,6 +994,7 @@ module.exports = class BatchBuilder {
         for (let i = 0; i < this.offChainTxs.length; i++){  //+ return Tx
             let txData = {};
             const tx = this.offChainTxs[i];
+            console.log('-----tx-----:', tx)
             const encodeTxData = this.getEncodeTxData(tx);
             const hashTx = this.getHashTx(encodeTxData);
 
@@ -1001,13 +1002,22 @@ module.exports = class BatchBuilder {
             txData.fromAy = tx.fromAy;
             txData.toAx = tx.toAx;
             txData.toAy = tx.toAy;
-            txData.fromEthAddr = tx.fromEthAddr;
+
+            if (Scalar.eq(tx.fromIdx, Constants.mainnetAccountIdx)) {
+                txData.fromEthAddr = Constants.mainnetEthAddr;
+                console.log('txData.fromEthAddr:', txData.fromEthAddr)
+            } else if (tx.fromEthAddr == undefined) {
+                const state = this.rollupDB.getStateByIdx(tx.fromIdx)
+                txData.fromEthAddr = state.fromEthAddr.toString()
+                console.log('txData.fromEthAddr:', txData.fromEthAddr)
+            } else {
+                txData.fromEthAddr = tx.fromEthAddr;
+            }
             txData.toEthAddr = tx.toEthAddr;
             txData.amount = tx.amount;
             txData.coin = tx.coin;
             txData.fee = tx.fee;
-
-            txData.type = this.getType(tx.toIdx);
+            txData.type = this.getType(tx.toIdx, tx.fromIdx);
             txData.fromIdx = tx.fromIdx;
             txData.toIdx = tx.toIdx;
             txData.nonce = tx.nonce;
@@ -1016,18 +1026,20 @@ module.exports = class BatchBuilder {
 
             txHashSlice[i] = txData;
         }
+        console.log('txHashSlice:', txHashSlice)
         return  txHashSlice;
     }
 
     /**
      * 0: transfer  1: deposit  2: withdraw  4: crossChainTransfer
      * @param {Number} toIdx
+     * @param {Number} fromIdx
      * @returns {string} type
      */
-    getType(toIdx) {
+    getType(toIdx,fromIdx) {
         if(Scalar.eq(toIdx, Constants.exitAccountIdx)) {
             return 'withdraw';
-        } else if(Constants.isMultiChainAccount(toIdx)) {
+        } else if(Constants.isMultiChainAccount(toIdx) || Scalar.eq(fromIdx, Constants.mainnetAccountIdx)) {
             return 'crossChainTransfer';
         }
         return 'transfer';
