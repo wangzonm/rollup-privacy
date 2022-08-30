@@ -291,7 +291,7 @@ const chainidx = (argv.chainidx) ? argv.chainidx : 'nochainidx';
                 }
                 if (type.toUpperCase() === 'SEND') {
                     const res = await sendTx(urlOperator, recipient, amount, wallet, passphrase, tokenId,
-                        feeTable[fee], nonce, actualNonce);
+                        feeTable[fee], nonce, actualNonce, ethAddr);
                     console.log(`Status: ${res.status}, Nonce: ${res.nonce}, txHash: ${res.txHash}`);
                     if (res.status.toString() === '200') {
                         fs.writeFileSync(noncePath, JSON.stringify(res.nonceObject, null, 1), 'utf-8');
@@ -507,7 +507,7 @@ function checkparamsOffchain(type, actualConfig) {
     case 'SEND':
         checkparam(amount, -1, 'amount');
         checkparam(tokenId, 'notokenid', 'token ID');
-        checkparam(recipient, 'norecipient', 'recipient');
+        //checkparam(recipient, 'norecipient', 'recipient');
         checkparam(fee, 'nofee', 'fee');
         checkFees(fee);
         checkparam(actualConfig.wallet, undefined, 'wallet path (with setparam command)');

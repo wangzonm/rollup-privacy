@@ -14,7 +14,16 @@ const Constants = require('../../../js/constants');
 
 async function sendTx(urlOperator, babyjubCompressed, amount, walletJson, passphrase, tokenId, fee, nonce, nonceObject, ethAddress) {
     const walletRollup = await Wallet.fromEncryptedJson(walletJson, passphrase);
-    const babyjubTo = hexToPoint(babyjubCompressed);
+    let babyjubTo;
+    const filters = {};
+    if (babyjubCompressed === 'norecipient') {
+        filters.ethAddr = ethAddress;
+        const res = await showAccounts(urlOperator, filters);
+        const leaf = res.data;
+        babyjubTo = hexToPoint(leaf[0].rollupAddress);
+    } else {
+        babyjubTo = hexToPoint(babyjubCompressed);
+    }
     return send(urlOperator, babyjubTo, amount, walletRollup, tokenId, fee, nonce, nonceObject, ethAddress);
 }
 
