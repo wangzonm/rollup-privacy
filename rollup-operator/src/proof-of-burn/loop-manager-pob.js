@@ -447,7 +447,7 @@ class LoopManager{
                 return;
             }
 
-            const txHashSlice = this.infoCurrentBatch.batchData.getDataAvailableTxs();   //+ 获取交易详情
+            const txHashSlice = await this.infoCurrentBatch.batchData.getDataAvailableTxs();   //+ 获取交易详情
 
             this.web3.eth.sendSignedTransaction(txSign.rawTransaction)
                 .then( receipt => {

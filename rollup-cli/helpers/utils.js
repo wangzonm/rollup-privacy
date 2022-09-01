@@ -22,6 +22,9 @@ function hexToPoint(compress) {
     else compressHex = compress;
     const buf = Buffer.from(compressHex, 'hex');
     const point = babyJub.unpackPoint(buf);
+    if (point === null) {
+        throw new Error('compressAddress format err!');
+    }
     const pointHexAx = `0x${point[0].toString(16)}`;
     const pointHexAy = `0x${point[1].toString(16)}`;
     const pointHex = [pointHexAx, pointHexAy];

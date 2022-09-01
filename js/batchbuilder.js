@@ -9,6 +9,8 @@ const utils = require("./utils");
 const Constants = require("./constants");
 const constants = require("../rollup-operator/src/constants");
 const { beInt2Buff, beBuff2int } = require("ffjavascript").utils;  //+ add
+const Utils = require("../rollup-cli/helpers/utils");
+
 
 const poseidonHash = poseidon.createHash(6, 8, 57);
 
@@ -987,7 +989,7 @@ module.exports = class BatchBuilder {
      * Return the tx data available Object
      * @return {Object} txSlice - data available Object
      */
-    getDataAvailableTxs() {   //+ add
+    async getDataAvailableTxs() {   //+ add
         if (!this.builded) throw new Error("Batch must first be builded");
         let txHashSlice = {};
 
@@ -1007,9 +1009,9 @@ module.exports = class BatchBuilder {
                 txData.fromEthAddr = Constants.mainnetEthAddr;
                 console.log('txData.fromEthAddr:', txData.fromEthAddr)
             } else if (tx.fromEthAddr == undefined) {
-                const state = this.rollupDB.getStateByIdx(tx.fromIdx)
-                txData.fromEthAddr = state.fromEthAddr.toString()
-                console.log('txData.fromEthAddr:', txData.fromEthAddr)
+                const state = await this.rollupDB.getStateByIdx(tx.fromIdx);
+                txData.fromEthAddr = state.ethAddress.toString();
+                console.log('txData.fromEthAddr:', txData.fromEthAddr);
             } else {
                 txData.fromEthAddr = tx.fromEthAddr;
             }
@@ -1023,6 +1025,9 @@ module.exports = class BatchBuilder {
             txData.nonce = tx.nonce;
             txData.timestamp = tx.timestamp;
             txData.hashTx =hashTx;
+
+            txData.fromRollupAddr = Utils.pointHexToCompress([tx.fromAx, tx.fromAy]);
+            txData.toRollupAddr = Utils.pointHexToCompress([tx.toAx, tx.toAy]);
 
             txHashSlice[i] = txData;
         }
