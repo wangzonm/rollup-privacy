@@ -448,11 +448,13 @@ class LoopManager{
             }
 
             const txHashSlice = await this.infoCurrentBatch.batchData.getDataAvailableTxs();   //+ 获取交易详情
+            const transactions = this.infoCurrentBatch.batchData.getDataAvailableTxSli();
 
             this.web3.eth.sendSignedTransaction(txSign.rawTransaction)
                 .then( receipt => {
                     if (receipt.status == true) {
-                        this.rollupSynch.insertTxs(txHashSlice)
+                        this.rollupSynch.insertTxs(txHashSlice);
+                        this.insertTxsData(transactions);
                         self._logTxOK();
                         self.timeouts.NEXT_STATE = 5000;
                         self.state = state.SYNCHRONIZING;
@@ -817,6 +819,35 @@ class LoopManager{
         info += ` ==> ${chalk.white.bold(`${reason}`)}`;
         this.logger.info(info);
     }
+
+    /**
+     * Insert the available tx slice to DB
+     * @param {Array} transactions -  array of available offChain transaction
+     */
+    async insertTxsData(transactions) {   //+ add
+        for (let i = 0; i < transactions.length; i++){
+            const tx = transactions[i];
+            const encodeTxData = this.infoCurrentBatch.batchData.getEncodeTxData(tx);
+            const hashTx = this.infoCurrentBatch.batchData.getHashTx(encodeTxData);
+            await this.poolTx.rollupDB.db.multiIns([
+                [hashTx, this.poolTx._tx2Array(tx)]
+            ]);
+        }
+    }
+
+    /**
+     * return the available transaction
+     * @param {String} txHash - the transaction hash
+     * @return {Object} - the available transaction
+     */
+    async getTxFromHash(txHash) {   //+ add
+        const txData = await this.poolTx.rollupDB.db.get(txHash);
+        if (txData === undefined) return null;
+        const txDataObj = this.poolTx._array2Tx(txData);
+        return txDataObj;
+    }
+
+
 }
 
 module.exports = LoopManager;

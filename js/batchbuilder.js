@@ -1086,6 +1086,22 @@ module.exports = class BatchBuilder {
     }
 
     /**
+     * Return array the available tx
+     * @return {Array} txSlice - array the available tx
+     */
+    getDataAvailableTxSli() {
+        if (!this.builded) throw new Error("Batch must first be builded");
+        let txSlice = [];
+
+        for (let i = 0; i < this.offChainTxs.length; i++){  //+ return Tx
+            const tx = this.offChainTxs[i];
+            txSlice[i] = tx;
+        }
+        return  txSlice;
+    }
+
+
+    /**
      * Return the encoded data available
      * @return {String} Encoded data available
      */

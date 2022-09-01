@@ -21,6 +21,7 @@ class HttpMethods {
      * @param {Object} tokensSynch - token synchronizer
      * @param {Object} encKey - operator encKey
      * @param {Object} logger - logger instance
+     * @param {Object} loopManager - Manage operator actions
      */
     constructor(
         serverApp,
@@ -28,7 +29,8 @@ class HttpMethods {
         pobSynch,
         tokensSynch,
         encKey,
-        logger
+        logger,
+        loopManager
     ){
         this.app = serverApp;
         this.rollupSynch = rollupSynch;
@@ -36,12 +38,29 @@ class HttpMethods {
         this.tokensSynch = tokensSynch;
         this.encKey = encKey;
         this.logger = logger;
+        this.loopManager = loopManager;
     }
 
     /**
      * Initilize http methods to get general rollup data
      */
     async initStateApi(){
+        this.app.get("/getTxFromHash/:txHash", async (req, res) => {  //+ add  get infoTx from txHash interface
+            const txHash = req.params.txHash;
+
+            try {
+                const infoTx = await this.loopManager.getTxFromHash(txHash);
+                if(infoTx == null)
+                    res.status(404).send("Transaction not found");
+                else
+                    res.status(200).json(stringifyBigInts(infoTx));
+            } catch (error) {
+                this.logger.error(`Message error: ${error.message}`);
+                this.logger.debug(`Message error: ${error.stack}`);
+                res.status(400).send("Error getting batch transactions information");
+            }
+        });
+
         this.app.get("/batchTransactions/:batchNum", async (req, res) => { //+ add
             const batchNum = req.params.batchNum;
 
